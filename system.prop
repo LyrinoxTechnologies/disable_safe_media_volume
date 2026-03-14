@@ -1,0 +1,4 @@
+audio.safemedia.bypass=true
+persist.audio.safemedia.bypass=true
+audio.safe_media_volume_enabled=false
+persist.audio.safe_media_volume_enabled=false

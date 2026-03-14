@@ -1,0 +1,6 @@
+id=veth_disvolwarn
+name=Disable vol warning
+version=v1.0
+versionCode=100
+author=Vetheon
+description=Disable safe media volume warning
