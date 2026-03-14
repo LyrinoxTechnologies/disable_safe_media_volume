@@ -1,6 +1,6 @@
 {
-  "version": "v1.1",
-  "versionCode": 110,
-  "zipUrl": "https://github.com/LyrinoxTechnologies/disable_safe_media_volume/releases/latest/download/disable_safe_media_volume.zip",
+  "version": "v1.1.0",
+  "versionCode": 100,
+  "zipUrl": "https://github.com/LyrinoxTechnologies/disable_safe_media_volume/releases/download/v1.1.0/disable_safe_media_volume-v1.1.0.zip",
   "changelog": "https://raw.githubusercontent.com/LyrinoxTechnologies/disable_safe_media_volume/main/CHANGELOG.md"
 }
