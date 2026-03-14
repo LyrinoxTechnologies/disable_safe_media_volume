@@ -1,6 +1,7 @@
-id=veth_disvolwarn
-name=Disable vol warning
-version=v1.0
+id=disable_safe_media_volume
+name=Disable Safe Media Volume
+version=v1.1.0
 versionCode=100
-author=Vetheon
-description=Disable safe media volume warning
+author=Vetheon (Lyrinox Technologies)
+description=Disables EU safe media volume enforcement. Supports Magisk, KernelSU, and APatch.
+updateJson=https://raw.githubusercontent.com/LyrinoxTechnologies/disable_safe_media_volume/refs/heads/main/update.json
