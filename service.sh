@@ -1,6 +1,7 @@
 #!/system/bin/sh
 MODPATH=${0%/*}
 exec 2>$MODPATH/log.txt
+LOGFILE="$MODPATH/log.txt"
 set -x
 
 # Logging function
@@ -17,13 +18,13 @@ cleanup() {
 # Trap signals for graceful shutdown
 trap cleanup SIGTERM SIGINT SIGHUP
 
-log "Service sarted, waiting for boot completion"
+log "Service started, waiting for boot completion"
 
 until [ "$(getprop sys.boot_completed)" = "1" ]; do
     sleep 1
 done
 
-log "Boot commpleted, waiting for AudioService configuration"
+log "Boot completed, waiting for AudioService configuration"
 
 # wait for AudioService to finish configuring
 sleep 35
