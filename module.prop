@@ -1,7 +1,7 @@
 id=disable_safe_media_volume
 name=Disable Safe Media Volume
-version=v1.1.0
-versionCode=100
+version=v3.0.0
+versionCode=300
 author=Vetheon (Lyrinox Technologies)
 description=Disables EU safe media volume enforcement. Supports Magisk, KernelSU, and APatch.
 updateJson=https://raw.githubusercontent.com/LyrinoxTechnologies/disable_safe_media_volume/refs/heads/main/update.json
