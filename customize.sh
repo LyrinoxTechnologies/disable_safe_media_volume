@@ -5,7 +5,7 @@ unzip -qjo "$ZIPFILE" -x 'META-INF/*' 'customize.sh' -d "$MODPATH" >&2
 
 ui_print ""
 ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-ui_print "   Disable Safe Media Volume"
+ui_print "   DoseBreaker"
 ui_print "   by Vetheon @ Lyrinox Technologies"
 ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 ui_print ""

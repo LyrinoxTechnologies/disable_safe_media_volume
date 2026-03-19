@@ -1,7 +1,7 @@
-id=disable_safe_media_volume
-name=Disable Safe Media Volume
+id=DoseBreaker
+name=DoseBreaker
 version=v3.1.3
 versionCode=313
 author=Vetheon (Lyrinox Technologies)
 description=Disables EU safe media volume enforcement. Supports Magisk, KernelSU, and APatch.
-updateJson=https://raw.githubusercontent.com/LyrinoxTechnologies/disable_safe_media_volume/refs/heads/main/update.json
+updateJson=https://raw.githubusercontent.com/LyrinoxTechnologies/dosebreaker/refs/heads/main/update.json

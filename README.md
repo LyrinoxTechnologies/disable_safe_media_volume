@@ -1,6 +1,4 @@
-# 📄 **Updated `README.md`**
-
-# Disable Safe Media Volume
+# DoseBreaker
 
 A root module for Android that disables EU safe media volume enforcement, including the CSD (Content Sound Dosimetry) system introduced in Android 14.
 
