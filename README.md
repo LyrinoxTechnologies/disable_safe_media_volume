@@ -1,5 +1,7 @@
 # DoseBreaker
 
+> NOTE: On the latest version of LineageOS, this does not reliably work. A fix will be published as soon as one can be found.
+
 A root module for Android that disables EU safe media volume enforcement, including the CSD (Content Sound Dosimetry) system introduced in Android 14.
 
 Supports **Magisk**, **KernelSU**, and **APatch**.
