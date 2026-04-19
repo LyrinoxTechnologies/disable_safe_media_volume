@@ -1,11 +1,10 @@
 #!/system/bin/sh
 
 MODPATH=${0%/*}
-exec 2>$MODPATH/log.txt
 LOGFILE="$MODPATH/log.txt"
 PIDFILE="$MODPATH/service.pid"
 
-exec 2>$LOGFILE
+exec 2>>"$LOGFILE"
 set -x
 
 # -----------------------------
@@ -56,37 +55,6 @@ done
 log "System fully ready"
 
 # -----------------------------
-# Detect Audio HAL (robust)
-# -----------------------------
-IS_AIDL=false
-IS_HIDL=false
-
-if getprop | grep -q "audio-hal-aidl"; then
-    IS_AIDL=true
-    log "Audio HAL: AIDL"
-elif getprop | grep -q "vendor.audio-hal"; then
-    IS_HIDL=true
-    log "Audio HAL: HIDL (vendor)"
-elif getprop | grep -q "audio-hal"; then
-    IS_HIDL=true
-    log "Audio HAL: HIDL (generic)"
-else
-    log "Audio HAL: Unknown"
-fi
-
-# -----------------------------
-# Detect PSD Resampler Support
-# -----------------------------
-HAS_PSD=false
-
-if getprop | grep -q "ro.audio.resampler.psd"; then
-    HAS_PSD=true
-    log "PSD resampler detected"
-else
-    log "No PSD resampler support"
-fi
-
-# -----------------------------
 # Apply Audio Props (base)
 # -----------------------------
 if [ -f "$MODPATH/audio_props.sh" ]; then
@@ -101,48 +69,21 @@ fi
 # Safe Resampler Configuration
 # -----------------------------
 apply_resampler() {
-
-    if [ "$HAS_PSD" = true ]; then
-        log "Applying dynamic high-quality resampler"
-
-        # Safe dynamic mode
-        setprop af.resampler.quality 7
-
-        # Conservative PSD tuning (maintainer-approved safe range)
-        resetprop ro.audio.resampler.psd.enable_at_samplerate 44100
-        resetprop ro.audio.resampler.psd.stopband 144
-        resetprop ro.audio.resampler.psd.halflength 512
-        resetprop ro.audio.resampler.psd.cutoff_percent 100
-        resetprop ro.audio.resampler.psd.tbwcheat 0
-
-    else
-        log "Applying safe resampler (quality=4)"
-        setprop af.resampler.quality 4
-    fi
+    log "Applying high-quality resampler (quality=7)"
+    setprop af.resampler.quality 7
 }
 
 # -----------------------------
-# Safe Volume / CSD Killer
+# CSD / Safe Volume Killer
 # -----------------------------
 disable_csd() {
+    # --- Primary: cmd audio (stable across Android versions) ---
+    # Zeros the EN 50332-3 dose accumulator directly in AudioService
+    cmd audio set-sound-dose-value 0.0 >/dev/null 2>&1
+    cmd audio reset-sound-dose-timeout >/dev/null 2>&1
 
-    # --- Binder (best effort only) ---
-    service call audio 102 >/dev/null 2>&1
-    service call audio 198 i32 0 >/dev/null 2>&1
-    service call audio 108 f 0.0 >/dev/null 2>&1
-
-    # --- Settings layer (most reliable) ---
+    # --- Legacy safe volume layer (belt-and-suspenders) ---
     settings put global audio_safe_volume_state 0 >/dev/null 2>&1
-    settings put global safe_headset_volume 0 >/dev/null 2>&1
-
-    settings put global audio_safe_csd_enabled 0 >/dev/null 2>&1
-    settings put global audio_safe_csd_dose 0 >/dev/null 2>&1
-
-    settings delete global audio_safe_csd_current_value >/dev/null 2>&1
-    settings delete global audio_safe_csd_dose_records >/dev/null 2>&1
-    settings delete global audio_safe_csd_next_warning >/dev/null 2>&1
-    settings delete global audio_safe_media_volume_index >/dev/null 2>&1
-
     settings put system safe_headset_volume_index 100 >/dev/null 2>&1
 }
 
@@ -192,5 +133,7 @@ while true; do
     fi
 
     sleep "$SLEEP_TIME" &
-    wait $! 2>/dev/null
+    SLEEP_PID=$!
+    wait $SLEEP_PID 2>/dev/null || true
+
 done
