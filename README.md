@@ -12,7 +12,7 @@ EU regulations require Android devices to automatically reduce headphone volume 
 
 **Legacy safe media volume** — an index-based system that limits volume above a threshold and re-enables after ~20 hours of cumulative listening.
 
-**CSD (Content Sound Dosimetry)** — a newer system introduced in Android 14 that measures actual sound exposure using MEL (Mean Energy Level). It accumulates dose across reboots via the settings database and triggers volume reduction at 5× the safe dose threshold.
+**CSD (Content Sound Dosimetry)** — a newer system introduced in Android 14 that measures actual sound exposure using MEL (Mean Energy Level). It accumulates dose in-memory within AudioService and triggers volume reduction at 100% of the weekly dose threshold. As of Android 16 / LineageOS 23.2, the accumulator is managed entirely at runtime with no persistent settings keys.
 
 There is no user-facing toggle to disable either system.
 
@@ -20,36 +20,28 @@ There is no user-facing toggle to disable either system.
 
 ## What This Module Does
 
-This module targets safe volume enforcement at multiple layers and continuously counteracts it at runtime:
+This module targets safe volume enforcement at multiple layers and continuously counteracts it at runtime.
 
 ### Core enforcement bypass
-- Calls `disableSafeMediaVolume()` via binder (best effort)
-- Resets CSD (SoundDose) accumulator at runtime
-- Clears persisted CSD dose records on every boot and continuously during runtime
-- Forces safe volume state to disabled via settings database
+- Resets the CSD dose accumulator directly via `cmd audio set-sound-dose-value 0.0`
+- Resets the momentary exposure timeout via `cmd audio reset-sound-dose-timeout`
+- Forces legacy safe volume state to disabled via the settings database
 
 ### Persistent runtime enforcement
 - Runs a background daemon (`service.sh`)
-- Continuously reapplies CSD resets and settings overrides
-- Uses an adaptive loop (fast at boot, lower overhead later)
+- Continuously resets the CSD accumulator and legacy settings overrides
+- Uses an adaptive loop (aggressive at boot, lower overhead at steady state)
 - Prevents vendor services from re-enabling enforcement
 
 ### Adaptive audio system handling
-- Detects audio HAL type:
-  - AIDL
-  - Vendor HIDL (Qualcomm and others)
-  - Generic fallback
-- Detects audio mods:
+- Detects audio mods at install time:
   - JamesDSP
   - ViPER4Android
 - Applies compatibility tweaks to prevent conflicts with DSP chains
 
-### Smart audio pipeline tuning
-- Dynamically configures resampler quality:
-  - Safe mode (`quality=4`) for universal compatibility
-  - High-quality dynamic mode (`quality=7`) when supported
-- Applies advanced PSD resampler tuning only on supported devices
-- Avoids unsafe values that can crash `audioserver`
+### Audio pipeline tuning
+- Sets resampler quality to 7 on all devices
+- Enables audio offload and deep buffer for sustained playback quality
 
 ---
 
@@ -58,9 +50,8 @@ This module targets safe volume enforcement at multiple layers and continuously 
 Modern Android offloads parts of audio policy enforcement to vendor services in `/vendor/`.
 
 These services:
-- Periodically re-enable CSD
-- Recalculate exposure dose
-- Override userland changes
+- Periodically recalculate and re-enable CSD
+- Override userland changes to the dose accumulator
 
 Because `/vendor/` is read-only and device-specific, the module uses a **persistent enforcement loop** instead:
 
@@ -99,15 +90,15 @@ This keeps the CSD accumulator effectively pinned near zero under normal use.
 Run these in a root shell:
 
 ```bash
-# Current CSD level
-dumpsys audio | grep -a "mCurrentCsd"
+# Current CSD dose value
+cmd audio get-sound-dose-value
 
-# Full CSD / SoundDose logs
-dumpsys audio | grep -a "CSD"
+# Full CSD state and update log
+dumpsys audio | grep -A2 -B2 "Csd\|mCurrentCsd\|mEnableCsd"
 
-# SoundDose accumulator
-dumpsys audio | grep -a "doser"
-````
+# Legacy safe volume state
+dumpsys audio | grep "mSafeMediaVolume"
+```
 
 Module log:
 
@@ -119,9 +110,9 @@ Module log:
 
 ## Tested On
 
-| Device          | OS                        | Root   |
-| --------------- | ------------------------- | ------ |
-| Pixel 8 (shiba) | LineageOS 23.2 (Android 16) | APatch |
+| Device          | OS                          | Root   |
+| --------------- | --------------------------- | ------ |
+| Pixel 8 (shiba) | LineageOS 23.2 (Android 16) | Magisk |
 
 If you've tested on other devices, open an issue or PR to expand this table.
 
@@ -129,12 +120,9 @@ If you've tested on other devices, open an issue or PR to expand this table.
 
 ## Known Limitations
 
-* Binder transaction IDs are not stable across all devices
-
-  * Treated as best-effort only
-* Some OEMs heavily modify audio frameworks, which may require additional adaptation
-* The module cannot patch `/vendor/`, so continuous enforcement is required
-* Advanced resampler tuning is only applied when supported to avoid instability
+- Some OEMs heavily modify audio frameworks, which may require additional adaptation
+- The module cannot patch `/vendor/`, so continuous enforcement is required
+- `cmd audio set-sound-dose-value` requires Android 14+ — on older versions the legacy settings layer is the only enforcement mechanism
 
 ---
 
@@ -152,7 +140,7 @@ Format: `vMAJOR.MINOR.PATCH`
 
 Issues and PRs are welcome.
 
-If something doesn’t work:
+If something doesn't work:
 
 * Include device model
 * Android version
